@@ -1582,6 +1582,7 @@
                     "group": "Security and sandboxing",
                     "pages": [
                       "gateway/security/index",
+                      "gateway/agent-runtime-boundary",
                       "gateway/security/exposure-runbook",
                       "gateway/security/secure-file-operations",
                       "gateway/security/shrinkwrap",
