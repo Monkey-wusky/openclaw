@@ -32,6 +32,18 @@ function escapeHtmlAttr(text: string): string {
   return escapeHtml(text).replace(/"/g, "&quot;");
 }
 
+function isTelegramSupportedLinkHref(href: string): boolean {
+  if (href.startsWith("#") && href.length > 1) {
+    return true;
+  }
+  try {
+    const parsed = new URL(href);
+    return ["http:", "https:", "tg:", "mailto:", "tel:"].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * File extensions that share TLDs and commonly appear in code/documentation.
  * These are wrapped in <code> tags to prevent Telegram from generating
@@ -54,6 +66,10 @@ function buildTelegramLink(link: MarkdownLinkSpan, text: string) {
   // Suppress auto-linkified file references (e.g. README.md → http://README.md)
   const label = text.slice(link.start, link.end);
   if (isAutoLinkedFileRef(href, label)) {
+    return null;
+  }
+  // Telegram rich messages reject local/relative hrefs with RICH_MESSAGE_URL_INVALID.
+  if (!isTelegramSupportedLinkHref(href)) {
     return null;
   }
   const safeHref = escapeHtmlAttr(href);
