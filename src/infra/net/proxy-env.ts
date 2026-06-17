@@ -36,6 +36,8 @@ export type EnvHttpProxyAgentProxyOptions = {
   httpProxy?: string;
   /** Proxy URL used for HTTPS requests. */
   httpsProxy?: string;
+  /** NO_PROXY bypass entries (comma/whitespace-separated hosts, domains, CIDRs). */
+  noProxy?: string;
 };
 
 /**
@@ -88,9 +90,11 @@ export function resolveEnvHttpProxyAgentOptions(
   const allProxy = resolveEnvAllProxyUrl(env);
   const httpProxy = resolveEnvHttpProxyUrl("http", env) ?? allProxy;
   const httpsProxy = resolveEnvHttpProxyUrl("https", env) ?? httpProxy;
+  const noProxy = (env.no_proxy ?? env.NO_PROXY ?? "").trim();
   const options: EnvHttpProxyAgentProxyOptions = {
     ...(httpProxy ? { httpProxy } : {}),
     ...(httpsProxy ? { httpsProxy } : {}),
+    ...(noProxy ? { noProxy } : {}),
   };
   return options.httpProxy || options.httpsProxy ? options : undefined;
 }
