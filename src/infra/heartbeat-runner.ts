@@ -1899,22 +1899,11 @@ export async function runHeartbeatOnce(opts: {
       return { status: "ran", durationMs: Date.now() - startedAt };
     }
 
-    // When message_tool_only mode is active but the model did not call the
-    // heartbeat_respond tool, suppress the private reply text while allowing
-    // other content (commitments, reminders, media) to be delivered normally.
-    const suppressPrivateHeartbeatText =
-      usesHeartbeatResponseTool && !heartbeatToolResponse && !hasRelayableExecCompletion;
-
     const normalized = heartbeatToolResponse
       ? normalizeHeartbeatToolNotification(heartbeatToolResponse, responsePrefix)
       : replyPayload
         ? normalizeHeartbeatReply(replyPayload, responsePrefix, ackMaxChars)
         : { shouldSkip: true, text: "", hasMedia: false };
-    // When message_tool_only is active but the model didn't call heartbeat_respond,
-    // suppress the private text while still allowing other content to flow.
-    if (suppressPrivateHeartbeatText && !normalized.hasMedia) {
-      normalized.text = "";
-    }
     // For exec completion events, don't skip even if the response looks like HEARTBEAT_OK.
     // The model should be responding with exec results, not ack tokens.
     // Also, if normalized.text is empty due to token stripping but we have exec completion,
