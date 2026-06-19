@@ -318,7 +318,7 @@ function loadReplyMediaPathsRuntime() {
 function formatSuppressedReplyPayloadForLog(reply: ReplyPayload): string {
   const metadata = getReplyPayloadMetadata(reply);
   const text = normalizeOptionalString(reply.text);
-  const textPreview = text ? text.replace(/\s+/g, " ").slice(0, 160) : undefined;
+  const textPreview = text ? text.replace(/\s+/g, " ").slice(0, 500) : undefined;
   const sendableParts = resolveSendableOutboundReplyParts(reply);
   const richParts = [
     reply.presentation ? "presentation" : undefined,
