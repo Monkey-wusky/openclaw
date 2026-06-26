@@ -37,9 +37,10 @@ describe("fal video generation provider", () => {
 
   function releasedJson(value: unknown) {
     return {
-      response: {
-        json: async () => value,
-      },
+      response: new Response(JSON.stringify(value), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
       release: vi.fn(async () => {}),
     };
   }
@@ -686,5 +687,51 @@ describe("fal video generation provider", () => {
     ).rejects.toThrow(
       "fal Seedance reference-to-video requires at least one image or video reference when audio references are provided.",
     );
+  });
+
+  it("bounds fal video generation JSON response reads", async () => {
+    mockFalProviderRuntime();
+
+    const ONE_MIB = 1024 * 1024;
+    const TOTAL_CHUNKS = 32;
+    const chunk = new Uint8Array(ONE_MIB);
+    let bytesPulled = 0;
+    let canceled = false;
+
+    fetchGuardMock.mockResolvedValueOnce({
+      response: new Response(
+        new ReadableStream<Uint8Array>({
+          pull(controller) {
+            if (bytesPulled / ONE_MIB >= TOTAL_CHUNKS) {
+              controller.close();
+              return;
+            }
+            bytesPulled += chunk.length;
+            controller.enqueue(chunk);
+          },
+          cancel() {
+            canceled = true;
+          },
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+      release: vi.fn(async () => {}),
+    });
+
+    const provider = buildFalVideoGenerationProvider();
+    await expect(
+      provider.generateVideo({
+        provider: "fal",
+        model: "fal-ai/minimax/video-01-live",
+        prompt: "test",
+        cfg: {},
+      }),
+    ).rejects.toThrow(/fal video generation response malformed|JSON response exceeds/);
+
+    expect(canceled).toBe(true);
+    expect(bytesPulled).toBeLessThan(TOTAL_CHUNKS * ONE_MIB);
   });
 });
